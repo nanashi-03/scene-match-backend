@@ -6,7 +6,6 @@ import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 // import java.security.Key;
@@ -62,7 +61,7 @@ public class JwtService {
         }
     }
 
-    public boolean isValid(String token, UserDetails user) {
+    public boolean isValid(String token, User user) {
         if (blacklistService.isBlacklisted(token))
             return false;
         String username = extractUsername(token);

@@ -62,7 +62,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.split(" ")[1];
+            String token = authHeader.substring(7);
             blacklistService.blacklist(token);
             return ResponseEntity.ok(new MessageResponse("Logged out successfully"));
         }

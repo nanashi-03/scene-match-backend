@@ -1,6 +1,6 @@
 package com.silveredsoul.scene_match.controller;
 
-import com.silveredsoul.scene_match.model.Item;
+import com.silveredsoul.scene_match.model.Movie;
 import com.silveredsoul.scene_match.service.RecommendationService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +17,7 @@ public class RecommendationController {
     }
 
     @GetMapping("/{userId}")
-    public List<Item> getRecommendations(@PathVariable Long userId) {
+    public List<Movie> getRecommendations(@PathVariable Long userId) {
         return recommendationService.recommendForUser(userId);
     }
 }

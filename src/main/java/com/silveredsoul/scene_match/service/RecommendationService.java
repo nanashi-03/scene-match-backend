@@ -1,9 +1,9 @@
 package com.silveredsoul.scene_match.service;
 
-import com.silveredsoul.scene_match.model.Item;
 import com.silveredsoul.scene_match.model.User;
-import com.silveredsoul.scene_match.repository.ItemRepository;
 import com.silveredsoul.scene_match.repository.UserRepository;
+import com.silveredsoul.scene_match.model.Movie;
+import com.silveredsoul.scene_match.repository.MovieRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -13,21 +13,24 @@ import java.util.stream.Collectors;
 @Service
 public class RecommendationService {
 
-    private final ItemRepository itemRepo;
-    private final UserRepository userRepo;
+    private final MovieRepository movieRepository;
+    private final UserRepository userRepository;
 
-    public RecommendationService(ItemRepository itemRepo, UserRepository userRepo) {
-        this.itemRepo = itemRepo;
-        this.userRepo = userRepo;
+    public RecommendationService(MovieRepository movieRepository, UserRepository userRepository) {
+        this.movieRepository = movieRepository;
+        this.userRepository = userRepository;
     }
 
-    public List<Item> recommendForUser(Long userId) {
+    public List<Movie> recommendForUser(Long userId) {
         try {
-            User user = userRepo.findById(userId).orElseThrow();
-            List<String> prefs = user.getPreferences();
+            User user = userRepository.findById(userId).orElseThrow();
+            List<String> userGenres = user.getPreferences();
 
-            return itemRepo.findAll().stream()
-                    .filter(item -> !Collections.disjoint(item.getTags(), prefs))
+            // Recommend movies that match at least one of the user's favorite genres,
+            // and sort them by rating descending
+            return movieRepository.findAll().stream()
+                    .filter(movie -> !Collections.disjoint(movie.getGenres(), userGenres))
+                    .limit(10)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();

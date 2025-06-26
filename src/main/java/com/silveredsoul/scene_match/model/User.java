@@ -1,20 +1,27 @@
 package com.silveredsoul.scene_match.model;
 
 import jakarta.persistence.*;
+
+import java.util.Collection;
 import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Data;
+import lombok.Builder;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@RequiredArgsConstructor
 @Entity
+@Builder
 @Table(name = "AppUser")
-public class User {
+public class User implements UserDetails{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,38 +37,16 @@ public class User {
     @ElementCollection
     private List<String> preferences;
 
-    // public User() {
-    // }
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+    }
 
-    // public User(Long id, String username, String email, List<String> preferences) {
-    //     this.id = id;
-    //     this.username = username;
-    //     this.email = email;
-    //     this.preferences = preferences;
-    // }
+    @Override public boolean isAccountNonExpired() { return true; }
 
-    // // Getters and setters
-    // public String getUsername() {
-    //     return username;
-    // }
+    @Override public boolean isAccountNonLocked() { return true; }
 
-    // public void setUsername(String username) {
-    //     this.username = username;
-    // }
+    @Override public boolean isCredentialsNonExpired() { return true; }
 
-    // public String getEmail() {
-    //     return email;
-    // }
-
-    // public void setEmail(String email) {
-    //     this.email = email;
-    // }
-
-    // public List<String> getPreferences() {
-    //     return preferences;
-    // }
-
-    // public void setPreferences(List<String> preferences) {
-    //     this.preferences = preferences;
-    // }
+    @Override public boolean isEnabled() { return true; }
 }

@@ -1,5 +1,6 @@
 package com.silveredsoul.scene_match.filter;
 
+import com.silveredsoul.scene_match.model.User;
 import com.silveredsoul.scene_match.service.JwtService;
 import com.silveredsoul.scene_match.service.UserDetailsServiceImpl;
 
@@ -8,7 +9,6 @@ import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ public class JwtAuthFilter extends GenericFilter {
             String username = jwtService.extractUsername(jwt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails user = userDetailsService.loadUserByUsername(username);
+                User user = userDetailsService.loadUserByUsername(username);
 
                 if (jwtService.isValid(jwt, user)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user, null,
