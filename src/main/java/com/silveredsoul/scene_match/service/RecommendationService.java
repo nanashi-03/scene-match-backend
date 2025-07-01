@@ -1,40 +1,79 @@
 package com.silveredsoul.scene_match.service;
 
-import com.silveredsoul.scene_match.model.User;
-import com.silveredsoul.scene_match.repository.UserRepository;
 import com.silveredsoul.scene_match.model.Movie;
+import com.silveredsoul.scene_match.model.User;
 import com.silveredsoul.scene_match.repository.MovieRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class RecommendationService {
 
     private final MovieRepository movieRepository;
-    private final UserRepository userRepository;
 
-    public RecommendationService(MovieRepository movieRepository, UserRepository userRepository) {
-        this.movieRepository = movieRepository;
-        this.userRepository = userRepository;
-    }
+    public List<Movie> recommendMovies(User user) {
+        Set<Long> watchedMovieIds = user.getWatchedMovies();
+        List<Movie> allMovies = movieRepository.findAll().stream()
+            .filter(movie -> movie.getTmdbId() != null && !watchedMovieIds.contains(movie.getTmdbId()))
+            .toList();
+        LocalDate cutoffDate = LocalDate.now().minusYears(2);
 
-    public List<Movie> recommendForUser(Long userId) {
-        try {
-            User user = userRepository.findById(userId).orElseThrow();
-            List<String> userGenres = user.getPreferences();
+        Map<Movie, Integer> scoredMovies = new HashMap<>();
+        Set<String> likedGenres = user.getGenrePreferences().getOrDefault("likes", new HashSet<>());
+        Set<String> dislikedGenres = user.getGenrePreferences().getOrDefault("dislikes", new HashSet<>());
+        Set<String> likedKeywords = user.getKeywordPreferences().getOrDefault("likes", new HashSet<>());
+        Set<String> dislikedKeywords = user.getKeywordPreferences().getOrDefault("dislikes", new HashSet<>());
 
-            // Recommend movies that match at least one of the user's favorite genres,
-            // and sort them by rating descending
-            return movieRepository.findAll().stream()
-                    .filter(movie -> !Collections.disjoint(movie.getGenres(), userGenres))
-                    .limit(10)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            e.printStackTrace();
+        for (Movie movie : allMovies) {
+            int score = 0;
+
+            // Liked Genres (+3)
+            if (movie.getGenres() != null && likedGenres != null && dislikedGenres != null) {
+                for (String genre : movie.getGenres()) {
+                    if (likedGenres.contains(genre)) {
+                        score += 3;
+                    }
+                    if (dislikedGenres.contains(genre)) {
+                        score -= 4;
+                    }
+                }
+            }
+
+            // Liked Keywords (+1), Disliked Keywords (-2)
+            if (movie.getKeywords() != null && likedKeywords != null && dislikedKeywords != null) {
+                for (String keyword : movie.getKeywords()) {
+                    if (likedKeywords.contains(keyword)) {
+                        score += 1;
+                    }
+                    if (dislikedKeywords.contains(keyword)) {
+                        score -= 2;
+                    }
+                }
+            }
+
+            // Top Rated (+1)
+            if (movie.getTopRated()) {
+                score += 2;
+            }
+
+            // Recently Released (+1)
+            if (movie.getReleaseDate() != null && movie.getReleaseDate().isAfter(cutoffDate)) {
+                score += 1;
+            }
+            
+            scoredMovies.put(movie, score);
         }
-        return Collections.emptyList();
+
+        // Sort descending by score
+        return scoredMovies.entrySet().stream()
+                .sorted(Map.Entry.<Movie, Integer>comparingByValue().reversed())
+                .limit(20)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 }

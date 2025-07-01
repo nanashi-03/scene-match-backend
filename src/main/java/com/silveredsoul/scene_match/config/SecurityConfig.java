@@ -32,11 +32,6 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
-        // http.authorizeHttpRequests(auth -> auth
-        //     .requestMatchers("/auth/**").permitAll()
-        //     .anyRequest().authenticated());
-
-        // return http.build();
     }
 
     @Bean

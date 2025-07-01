@@ -1,52 +1,45 @@
 package com.silveredsoul.scene_match.controller;
 
+// import com.silveredsoul.scene_match.data.MovieSearchRequest;
 import com.silveredsoul.scene_match.model.Movie;
 import com.silveredsoul.scene_match.repository.MovieRepository;
-// import com.silveredsoul.scene_match.service.TmdbService;
+// import com.silveredsoul.scene_match.service.MovieSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+// import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 
-import java.util.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/movies")
 @RequiredArgsConstructor
 public class MovieController {
-
-    // private final TmdbService tmdbService;
     private final MovieRepository movieRepo;
-
-    // @PostMapping("/import")
-    // public String importPopularMovies() {
-    //     List<Map<String, Object>> tmdbMovies = tmdbService.getCombinedUniqueMovies();
-    //     int added = 0;
-
-    //     for (Map<String, Object> tmdbMovie : tmdbMovies) {
-    //         String title = (String) tmdbMovie.get("title");
-    //         Movie movie = new Movie();
-    //         movie.setTitle(title);
-    //         movie.setDescription((String) tmdbMovie.get("description"));
-    //         movie.setPosterPath((String) tmdbMovie.get("posterPath"));
-    //         Object genresObj = tmdbMovie.get("genres");
-    //         List<String> genres = new ArrayList<>();
-    //         if (genresObj instanceof List<?>) {
-    //             for (Object genre : (List<?>) genresObj) {
-    //                 if (genre instanceof String) {
-    //                     genres.add((String) genre);
-    //                 }
-    //             }
-    //         }
-    //         movie.setGenres(genres);
-    //         movie.setTags(new ArrayList<>());
-    //         movie.setLikeCount(0);
-    //         movieRepo.save(movie);
-    //         added++;
-    //     }
-    //     return added + " movies imported successfully";
-    // }
+    // private final MovieSearchService movieSearchService;
 
     @GetMapping
-    public List<Movie> getAllMovies() {
-        return movieRepo.findAll();
+    public List<Movie> getAllMovies(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = Pageable.ofSize(size).withPage(page - 1);
+        return movieRepo.findAll(pageable).getContent();
     }
+
+    @GetMapping("/{tmdbId}")
+    public Movie getMovieById(@PathVariable Long tmdbId) {
+        return movieRepo.findByTmdbId(tmdbId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found"));
+    }
+
+    // @PostMapping("/search")
+    // public List<Movie> searchMovies(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size, @RequestBody MovieSearchRequest request) 
+    // {
+    //     Pageable pageable = PageRequest.of(page, size);
+    //     return movieRepo.findAll(
+    //             movieSearchService.advancedSearch(
+    //                     request.getTitle(),
+    //                     request.getGenres(),
+    //                     request.getKeywords()),
+    //             pageable).getContent();
+    // }
 }

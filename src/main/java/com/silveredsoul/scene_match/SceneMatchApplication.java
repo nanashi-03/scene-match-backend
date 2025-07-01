@@ -12,7 +12,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @SpringBootApplication
 @EnableScheduling
@@ -34,13 +35,29 @@ public class SceneMatchApplication {
         String password = encoder.encode(rawPassword);
 
         return args -> {
-            userRepo.save(User.builder()
-                .username(username)
-                .email("11052003ac@gmail.com")
-                .password(password)
-                .preferences(List.of("action", "sci-fi", "thriller"))
-                .build()
-            );
+            if (!userRepo.existsByUsername(username))
+            {
+                userRepo.save(User.builder()
+                    .username(username)
+                    .email("11052003ac@gmail.com")
+                    .password(password)
+                    .genrePreferences(Map.of(
+                        "likes", Set.of("action", "adventure", "comedy", "fantasy", "horror", "science fiction"),
+                        "dislikes", Set.of("romance", "drama")
+                    ))
+                    .keywordPreferences(Map.of(
+                        "likes", Set.of("hero", "villain", "love", "friendship"),
+                        "dislikes", Set.of("violence", "gore", "sad ending", "politics")
+                    ))
+                    .role("ADMIN")
+                    .build()
+                );
+                System.out.println("Admin user created with username: " + username);
+            }
+            else
+            {
+                System.out.println("Admin user already exists with username: " + username);
+            }
         };
     }
 

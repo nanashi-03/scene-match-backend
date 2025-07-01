@@ -1,12 +1,17 @@
 package com.silveredsoul.scene_match.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.silveredsoul.scene_match.model.Movie;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 // import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -25,136 +30,187 @@ public class TmdbService {
     private String baseUrl;
 
     private final static Map<Integer, String> GENRE_MAP = Map.ofEntries(
-            Map.entry(28, "Action"),
-            Map.entry(12, "Adventure"),
-            Map.entry(16, "Animation"),
-            Map.entry(35, "Comedy"),
-            Map.entry(80, "Crime"),
-            Map.entry(99, "Documentary"),
-            Map.entry(18, "Drama"),
-            Map.entry(10751, "Family"),
-            Map.entry(14, "Fantasy"),
-            Map.entry(36, "History"),
-            Map.entry(27, "Horror"),
-            Map.entry(10402, "Music"),
-            Map.entry(9648, "Mystery"),
-            Map.entry(10749, "Romance"),
-            Map.entry(878, "Science Fiction"),
-            Map.entry(10770, "TV Movie"),
-            Map.entry(53, "Thriller"),
-            Map.entry(10752, "War"),
-            Map.entry(37, "Western"));
+        Map.entry(28, "action"),
+        Map.entry(12, "adventure"),
+        Map.entry(16, "animation"),
+        Map.entry(35, "comedy"),
+        Map.entry(80, "crime"),
+        Map.entry(99, "documentary"),
+        Map.entry(18, "drama"),
+        Map.entry(10751, "family"),
+        Map.entry(14, "fantasy"),
+        Map.entry(36, "history"),
+        Map.entry(27, "horror"),
+        Map.entry(10402, "music"),
+        Map.entry(9648, "mystery"),
+        Map.entry(10749, "romance"),
+        Map.entry(878, "science fiction"),
+        Map.entry(10770, "tv movie"),
+        Map.entry(53, "thriller"),
+        Map.entry(10752, "war"),
+        Map.entry(37, "western")
+    );
 
-    private List<Map<String, Object>> getPopularMovies() {
-        List<Map<String, Object>> allMovies = new ArrayList<>();
+    private List<String> getKeywordsNode(org.springframework.http.HttpEntity<String> entity, Long tmdbId)
+            throws InterruptedException {
+        String keywordsUrl = String.format("%s/movie/%d/keywords?api_key=%s", baseUrl,
+                tmdbId, apiKey);
+        List<String> keywords = new ArrayList<>();
+        try {
+            org.springframework.http.ResponseEntity<JsonNode> keywordsResponse = restTemplate.exchange(
+                    keywordsUrl, org.springframework.http.HttpMethod.GET, entity, JsonNode.class);
+            Thread.sleep(25);
+            JsonNode keywordsNode = keywordsResponse.getBody();
+            if (keywordsNode != null && keywordsNode.has("keywords")) {
+                for (JsonNode keywordNode : keywordsNode.get("keywords")) {
+                    keywords.add(keywordNode.get("name").asText().toLowerCase());
+                }
+            }
+        } catch (RestClientException e) {
+            System.err.println("Failed to fetch keywords for TMDB ID " + tmdbId + ": " + e.getMessage());
+        } catch (InterruptedException e) {
+            System.err.println("Interrupted while fetching keywords for TMDB ID " + tmdbId + ": " + e.getMessage());
+        }
+        return keywords;
+    }
+
+    // "popular" and "top_rated" categories
+    private List<Movie> getMovies(String category, int page) {
+        List<Movie> allMovies = new ArrayList<>();
     
         org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
         headers.setBearerAuth(accessToken);
         org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
     
-        for (int page = 1; page <= 50; page++) {
-            String url = String.format("%s/movie/popular?page=%d", baseUrl, page);
-    
-            try {
-                org.springframework.http.ResponseEntity<JsonNode> responseEntity =
-                        restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, JsonNode.class);
-    
-                JsonNode response = responseEntity.getBody();
-                if (response != null && response.has("results")) {
-                    for (JsonNode result : response.get("results")) {
-                        Map<String, Object> movie = new HashMap<>();
-                        movie.put("tmdbId", result.get("id").asLong());
-                        movie.put("title", result.get("title").asText());
-                        movie.put("description", result.get("overview").asText());
-                        movie.put("posterPath", result.get("poster_path").asText());
-    
-                        List<String> genres = new ArrayList<>();
-                        for (JsonNode genreIdNode : result.get("genre_ids")) {
-                            int genreId = genreIdNode.asInt();
-                            String genreName = GENRE_MAP.getOrDefault(genreId, "Unknown");
-                            genres.add(genreName);
-                        }
-    
-                        movie.put("genres", genres);
-                        allMovies.add(movie);
-                    }
-                }
+        String url = String.format("%s/movie/%s?page=%d", baseUrl, category, page);
+        System.out.println(url);
 
-                Thread.sleep(20);
-            } catch (Exception e) {
-                System.err.println("Failed to fetch page " + page + ": " + e.getMessage());
+        try {
+            org.springframework.http.ResponseEntity<JsonNode> responseEntity =
+                    restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, JsonNode.class);
+            Thread.sleep(25);
+            JsonNode response = responseEntity.getBody();
+            if (response != null && response.has("results")) {
+                for (JsonNode result : response.get("results")) {
+                    List<String> genres = new ArrayList<>();
+                    List<String> keywords = new ArrayList<>();
+
+                    for (JsonNode genreIdNode : result.get("genre_ids")) {
+                        int genreId = genreIdNode.asInt();
+                        String genreName = GENRE_MAP.getOrDefault(genreId, "Unknown");
+                        genres.add(genreName);
+                    }
+                    Long tmdbId = result.get("id").asLong();
+                    keywords = getKeywordsNode(entity, tmdbId);
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    String releaseDateStr = result.has("release_date") ? result.get("release_date").asText() : null;
+                    LocalDate releaseDate = LocalDate.parse(releaseDateStr, formatter);
+
+                    
+                    Movie movie = Movie.builder()
+                            .tmdbId(tmdbId)
+                            .title(result.get("title").asText())
+                            .description(result.get("overview").asText())
+                            .posterPath(result.get("poster_path").asText())
+                            .genres(genres)
+                            .keywords(keywords)
+                            .releaseDate(releaseDate)
+                            .TopRated(false)
+                            .build();
+
+                    allMovies.add(movie);
+                }
             }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch page " + page + " of " + category + ": " + e.getMessage());
         }
     
         return allMovies;
     }
 
-    private List<Map<String, Object>> getTopRatedMovies() {
-        List<Map<String, Object>> allMovies = new ArrayList<>();
-
-        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
-
-        for (int page = 1; page <= 50; page++) {
-            String url = String.format("%s/movie/top_rated?page=%d", baseUrl, page);
-
-            try {
-                org.springframework.http.ResponseEntity<JsonNode> responseEntity = restTemplate.exchange(url,
-                        org.springframework.http.HttpMethod.GET, entity, JsonNode.class);
-
-                JsonNode response = responseEntity.getBody();
-                if (response != null && response.has("results")) {
-                    for (JsonNode result : response.get("results")) {
-                        Map<String, Object> movie = new HashMap<>();
-                        movie.put("tmdbId", result.get("id").asLong());
-                        movie.put("title", result.get("title").asText());
-                        movie.put("description", result.get("overview").asText());
-                        movie.put("posterPath", result.get("poster_path").asText());
-
-                        List<String> genres = new ArrayList<>();
-                        for (JsonNode genreIdNode : result.get("genre_ids")) {
-                            int genreId = genreIdNode.asInt();
-                            String genreName = GENRE_MAP.getOrDefault(genreId, "Unknown");
-                            genres.add(genreName);
-                        }
-
-                        movie.put("genres", genres);
-                        allMovies.add(movie);
-                    }
-                }
-
-                Thread.sleep(20); // Respect TMDB rate limit
-            } catch (Exception e) {
-                System.err.println("Failed to fetch top-rated page " + page + ": " + e.getMessage());
-            }
-        }
-
-        return allMovies;
-    }
     
-    public List<Map<String, Object>> getCombinedUniqueMovies() {
-        List<Map<String, Object>> combined = new ArrayList<>();
+    
+    public List<Movie> getCombinedUniqueMovies() {
+        List<Movie> combined = new ArrayList<>();
         Set<Long> seenIds = new HashSet<>();
+        int pages = 2;
+        List<Movie> popular = new ArrayList<>();
+        List<Movie> topRated = new ArrayList<>();
+        for (int page = 1; page <= pages; page++) {
+            popular.addAll(getMovies("popular", page));
+            topRated.addAll(getMovies("top_rated", page));
+        }
 
-        List<Map<String, Object>> popular = getPopularMovies();
-        List<Map<String, Object>> topRated = getTopRatedMovies();
-
-        for (Map<String, Object> movie : popular) {
-            Long id = (Long) movie.get("tmdbId");
+        for (Movie movie : popular) {
+            Long id = (Long) movie.getTmdbId();
             if (seenIds.add(id)) {
                 combined.add(movie);
             }
         }
 
-        for (Map<String, Object> movie : topRated) {
-            Long id = (Long) movie.get("tmdbId");
+        for (Movie movie : topRated) {
+            Long id = (Long) movie.getTmdbId();
+            movie.setTopRated(true); // Set TopRated to true for top-rated movies
             if (seenIds.add(id)) {
                 combined.add(movie);
+            } else {
+                combined.stream()
+                        .filter(m -> m.getTmdbId().equals(id))
+                        .findFirst()
+                        .ifPresent(existingMovie -> {
+                            // Chagne the value of TopRated to true if it is not already
+                            if (existingMovie.getTopRated() == null || !existingMovie.getTopRated()) {
+                                existingMovie.setTopRated(true);
+                            }
+                        });
             }
         }
 
         return combined;
     }
-    
+
+    // Get movie by Id
+    public Movie getMovieById(Long tmdbId) {
+        String url = String.format("%s/movie/%d?api_key=%s&language=en-US", baseUrl, tmdbId, apiKey);
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
+        try {
+            org.springframework.http.ResponseEntity<JsonNode> responseEntity = restTemplate.exchange(url,
+                    org.springframework.http.HttpMethod.GET, entity, JsonNode.class);
+            Thread.sleep(25);
+            JsonNode movieNode = responseEntity.getBody();
+            if (movieNode != null) {
+                List<String> genres = new ArrayList<>();
+                for (JsonNode genre : movieNode.get("genres")) {
+                    genres.add(genre.get("name").asText().toLowerCase());
+                }
+
+                List<String> keywords = new ArrayList<>();
+                String keywordsUrl = String.format("%s/movie/%d/keywords?api_key=%s", baseUrl, tmdbId, apiKey);
+                org.springframework.http.ResponseEntity<JsonNode> keywordsResponse = restTemplate.exchange(
+                        keywordsUrl, org.springframework.http.HttpMethod.GET, entity, JsonNode.class);
+                JsonNode keywordsNode = keywordsResponse.getBody();
+                if (keywordsNode != null && keywordsNode.has("keywords")) {
+                    for (JsonNode keywordNode : keywordsNode.get("keywords")) {
+                        keywords.add(keywordNode.get("name").asText());
+                    }
+                }
+
+                Movie movie = Movie.builder()
+                        .tmdbId(movieNode.get("id").asLong())
+                        .title(movieNode.get("title").asText())
+                        .description(movieNode.get("overview").asText())
+                        .posterPath(movieNode.get("poster_path").asText())
+                        .genres(genres)
+                        .keywords(keywords)
+                        .build();
+
+                return movie;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch movie with ID " + tmdbId + ": " + e.getMessage());
+        }
+        return null;
+    }
 }
