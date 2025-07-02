@@ -29,7 +29,7 @@ public class Movie {
 
     private LocalDate releaseDate;
 
-    private Boolean TopRated;
+    private Boolean topRated;
 
     @ElementCollection
     private List<String> genres;

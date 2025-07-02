@@ -47,6 +47,7 @@ public class JwtService {
         SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
 
         return Jwts.builder().subject(user.getUsername())
+            .claim("userId", user.getId())
             .expiration(exp)
             .issuedAt(now)
             .signWith(key)
@@ -56,6 +57,14 @@ public class JwtService {
     public String extractUsername(String token) {
         try {
             return getClaims(token).getSubject();
+        } catch (JwtException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public Long extractId(String token) {
+        try {
+            return (Long) getClaims(token).get("userId");
         } catch (JwtException | IllegalArgumentException e) {
             return null;
         }

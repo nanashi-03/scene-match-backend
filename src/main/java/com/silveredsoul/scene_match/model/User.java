@@ -1,6 +1,7 @@
 package com.silveredsoul.scene_match.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,6 +34,8 @@ public class User implements UserDetails {
     @Column(unique = true)
     @NonNull
     private String username;
+
+    @Email
     private String email;
 
     @NonNull

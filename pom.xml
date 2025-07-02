@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.silvered-soul</groupId>
 	<artifactId>scene-match</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.5.1-SNAPSHOT</version>
 	<name>scene-match</name>
 	<description>Movie recommendation app</description>
 	<url/>
@@ -90,6 +90,11 @@
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.12.6</version>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.8.9</version>
 		</dependency>
  </dependencies>
 

@@ -1,7 +1,10 @@
 package com.silveredsoul.scene_match.controller;
 
+import com.silveredsoul.scene_match.service.JwtService;
 import com.silveredsoul.scene_match.service.PreferenceService;
 import com.silveredsoul.scene_match.service.RecommendationService;
+
+
 import com.silveredsoul.scene_match.data.UpdatePreferencesRequest;
 import com.silveredsoul.scene_match.data.UserProfileResponse;
 import com.silveredsoul.scene_match.model.Movie;
@@ -23,82 +26,106 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/user/{userId}")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
     private final PreferenceService preferenceService;
     private final RecommendationService recommendationService;
     private final UserRepository userRepository;
+    private final JwtService jwtService;
 
     @PostMapping("/like/{tmdbId}")
-    public ResponseEntity<String> likeMovie(@PathVariable Long userId, @PathVariable Long tmdbId) {
+    public ResponseEntity<String> likeMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         preferenceService.likeMovie(userId, tmdbId);
         return ResponseEntity.ok("Movie liked");
     }
     
     @PostMapping("/watch/{tmdbId}")
-    public ResponseEntity<String> watchMovie(@PathVariable Long userId, @PathVariable Long tmdbId) {
+    public ResponseEntity<String> watchMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         preferenceService.watchMovie(userId, tmdbId);
         return ResponseEntity.ok("Movie watched");
     }
 
     @PostMapping("/dislike/{tmdbId}")
-    public ResponseEntity<String> dislikeMovie(@PathVariable Long userId, @PathVariable Long tmdbId) {
+    public ResponseEntity<String> dislikeMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         preferenceService.dislikeMovie(userId, tmdbId);
         return ResponseEntity.ok("Movie disliked");
     }
 
     @PostMapping("/unwatch/{tmdbId}")
-    public ResponseEntity<String> unwatchMovie(@PathVariable Long userId, @PathVariable Long tmdbId) {
+    public ResponseEntity<String> unwatchMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         preferenceService.unwatchMovie(userId, tmdbId);
         return ResponseEntity.ok("Movie unwatched");
     }
 
     @PutMapping("/preferences")
-    public ResponseEntity<String> updatePreferences(@PathVariable Long userId, @RequestBody UpdatePreferencesRequest request) {
+    public ResponseEntity<String> updatePreferences(@RequestHeader("Authorization") String authHeader, @RequestBody UpdatePreferencesRequest request) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         preferenceService.updatePreferences(userId, request);
         return ResponseEntity.ok("User preferences updated");
     }
 
     @DeleteMapping("/preferences")
-    public ResponseEntity<String> deletePreferences(@PathVariable Long userId, @RequestBody UpdatePreferencesRequest request) {
+    public ResponseEntity<String> deletePreferences(@RequestHeader("Authorization") String authHeader, @RequestBody UpdatePreferencesRequest request) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         preferenceService.deletePreferences(userId, request);
         return ResponseEntity.ok("User preferences modified");
     }
 
     @GetMapping("/preferences")
-    public ResponseEntity<UpdatePreferencesRequest> getUserPreferences(@PathVariable Long userId) {
+    public ResponseEntity<UpdatePreferencesRequest> getUserPreferences(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         UpdatePreferencesRequest preferences = preferenceService.getUserPreferences(userId);
         return ResponseEntity.ok(preferences);
     }
 
     @GetMapping("/recommendations")
-    public List<Movie> getRecommendations(@PathVariable Long userId) {
+    public List<Movie> getRecommendations(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         return recommendationService.recommendMovies(user);
     }
 
     @GetMapping("/liked")
-    public Set<Long> getLikedMovies(@PathVariable Long userId) {
+    public Set<Long> getLikedMovies(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         return user.getLikedMovies();
     }
 
     @GetMapping("/watched")
-    public Set<Long> getWatchedMovies(@PathVariable Long userId) {
+    public Set<Long> getWatchedMovies(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         return user.getWatchedMovies();
     }
 
-    @GetMapping()
-    public UserProfileResponse getUserProfile(@PathVariable Long userId) {
+    @GetMapping("/profile")
+    public UserProfileResponse getUserProfile(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractId(token);
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 

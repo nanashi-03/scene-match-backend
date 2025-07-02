@@ -111,11 +111,11 @@ public class TmdbService {
                             .tmdbId(tmdbId)
                             .title(result.get("title").asText())
                             .description(result.get("overview").asText())
-                            .posterPath(result.get("poster_path").asText())
+                            .posterPath("https://image.tmdb.org/t/p/original"+result.get("poster_path").asText())
                             .genres(genres)
                             .keywords(keywords)
                             .releaseDate(releaseDate)
-                            .TopRated(false)
+                            .topRated(false)
                             .build();
 
                     allMovies.add(movie);
