@@ -6,10 +6,12 @@ import com.silveredsoul.scene_match.service.RecommendationService;
 
 
 import com.silveredsoul.scene_match.data.UpdatePreferencesRequest;
+import com.silveredsoul.scene_match.data.UserPreferencesResponse;
 import com.silveredsoul.scene_match.data.UserProfileResponse;
 import com.silveredsoul.scene_match.model.Movie;
 import com.silveredsoul.scene_match.model.User;
 import com.silveredsoul.scene_match.repository.UserRepository;
+import com.silveredsoul.scene_match.data.Responses.MessageResponse;
 
 import java.util.Map;
 import java.util.Set;
@@ -40,58 +42,58 @@ public class UserController {
     private final JwtService jwtService;
 
     @PostMapping("/like/{tmdbId}")
-    public ResponseEntity<String> likeMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
+    public ResponseEntity<MessageResponse> likeMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
         String token = authHeader.substring(7);
         Long userId = jwtService.extractId(token);
         preferenceService.likeMovie(userId, tmdbId);
-        return ResponseEntity.ok("Movie liked");
+        return ResponseEntity.ok(new MessageResponse("Movie liked"));
     }
     
     @PostMapping("/watch/{tmdbId}")
-    public ResponseEntity<String> watchMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
+    public ResponseEntity<MessageResponse> watchMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
         String token = authHeader.substring(7);
         Long userId = jwtService.extractId(token);
         preferenceService.watchMovie(userId, tmdbId);
-        return ResponseEntity.ok("Movie watched");
+        return ResponseEntity.ok(new MessageResponse("Movie watched"));
     }
 
     @PostMapping("/dislike/{tmdbId}")
-    public ResponseEntity<String> dislikeMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
+    public ResponseEntity<MessageResponse> dislikeMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
         String token = authHeader.substring(7);
         Long userId = jwtService.extractId(token);
         preferenceService.dislikeMovie(userId, tmdbId);
-        return ResponseEntity.ok("Movie disliked");
+        return ResponseEntity.ok(new MessageResponse("Movie disliked"));
     }
 
     @PostMapping("/unwatch/{tmdbId}")
-    public ResponseEntity<String> unwatchMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
+    public ResponseEntity<MessageResponse> unwatchMovie(@RequestHeader("Authorization") String authHeader, @PathVariable Long tmdbId) {
         String token = authHeader.substring(7);
         Long userId = jwtService.extractId(token);
         preferenceService.unwatchMovie(userId, tmdbId);
-        return ResponseEntity.ok("Movie unwatched");
+        return ResponseEntity.ok(new MessageResponse("Movie unwatched"));
     }
 
     @PutMapping("/preferences")
-    public ResponseEntity<String> updatePreferences(@RequestHeader("Authorization") String authHeader, @RequestBody UpdatePreferencesRequest request) {
+    public ResponseEntity<MessageResponse> updatePreferences(@RequestHeader("Authorization") String authHeader, @RequestBody UpdatePreferencesRequest request) {
         String token = authHeader.substring(7);
         Long userId = jwtService.extractId(token);
         preferenceService.updatePreferences(userId, request);
-        return ResponseEntity.ok("User preferences updated");
+        return ResponseEntity.ok(new MessageResponse("User preferences updated"));
     }
 
     @DeleteMapping("/preferences")
-    public ResponseEntity<String> deletePreferences(@RequestHeader("Authorization") String authHeader, @RequestBody UpdatePreferencesRequest request) {
+    public ResponseEntity<MessageResponse> deletePreferences(@RequestHeader("Authorization") String authHeader, @RequestBody UpdatePreferencesRequest request) {
         String token = authHeader.substring(7);
         Long userId = jwtService.extractId(token);
         preferenceService.deletePreferences(userId, request);
-        return ResponseEntity.ok("User preferences modified");
+        return ResponseEntity.ok(new MessageResponse("User preferences modified"));
     }
 
     @GetMapping("/preferences")
-    public ResponseEntity<UpdatePreferencesRequest> getUserPreferences(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<UserPreferencesResponse> getUserPreferences(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
         Long userId = jwtService.extractId(token);
-        UpdatePreferencesRequest preferences = preferenceService.getUserPreferences(userId);
+        UserPreferencesResponse preferences = preferenceService.getUserPreferences(userId);
         return ResponseEntity.ok(preferences);
     }
 

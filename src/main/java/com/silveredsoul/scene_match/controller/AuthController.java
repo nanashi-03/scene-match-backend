@@ -4,14 +4,19 @@ import com.silveredsoul.scene_match.model.User;
 import com.silveredsoul.scene_match.repository.UserRepository;
 import com.silveredsoul.scene_match.service.JwtService;
 import com.silveredsoul.scene_match.service.TokenBlacklistService;
+import com.silveredsoul.scene_match.data.Responses.AuthResponse;
+import com.silveredsoul.scene_match.data.Responses.ErrorResponse;
+import com.silveredsoul.scene_match.data.Responses.MessageResponse;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/auth")
@@ -54,7 +59,7 @@ public class AuthController {
             return ResponseEntity.status(401).body(new ErrorResponse("Authentication failed: " + e.getMessage()));
         }
 
-        User realUser = userRepo.findByUsername(user.getUsername()).orElseThrow();
+        User realUser = userRepo.findByUsername(user.getUsername()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
         String token = jwtService.generateToken(realUser);
         return ResponseEntity.ok(new AuthResponse(token));
     }
@@ -67,29 +72,5 @@ public class AuthController {
             return ResponseEntity.ok(new MessageResponse("Logged out successfully"));
         }
         return ResponseEntity.badRequest().body(new ErrorResponse("Invalid token"));
-    }
-}
-
-class AuthResponse {
-    public String token;
-
-    public AuthResponse(String token) {
-        this.token = token;
-    }
-}
-
-class ErrorResponse {
-    public String error;
-
-    public ErrorResponse(String error) {
-        this.error = error;
-    }
-}
-
-class MessageResponse {
-    public String message;
-
-    public MessageResponse(String message) {
-        this.message = message;
     }
 }

@@ -2,6 +2,7 @@ package com.silveredsoul.scene_match.service;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.silveredsoul.scene_match.data.UpdatePreferencesRequest;
+import com.silveredsoul.scene_match.data.UserPreferencesResponse;
 import com.silveredsoul.scene_match.model.User;
 import com.silveredsoul.scene_match.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -93,7 +95,7 @@ public class PreferenceService {
         userRepo.save(user);
     }
 
-    public UpdatePreferencesRequest getUserPreferences(Long userId) {
+    public UserPreferencesResponse getUserPreferences(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Set<String> likedGenres = new HashSet<>(
@@ -105,11 +107,11 @@ public class PreferenceService {
         Set<String> dislikedKeywords = new HashSet<>(
                 user.getKeywordPreferences().getOrDefault("dislikes", new HashSet<>()));
 
-        return new UpdatePreferencesRequest(
-            likedGenres.isEmpty() ? null : String.join(", ", likedGenres),
-            dislikedGenres.isEmpty() ? null : String.join(", ", dislikedGenres),
-            likedKeywords.isEmpty() ? null : String.join(", ", likedKeywords),
-            dislikedKeywords.isEmpty() ? null : String.join(", ", dislikedKeywords)
+        return new UserPreferencesResponse(
+            likedGenres.isEmpty() ? null : List.copyOf(likedGenres),
+            dislikedGenres.isEmpty() ? null : List.copyOf(dislikedGenres),
+            likedKeywords.isEmpty() ? null : List.copyOf(likedKeywords),
+            dislikedKeywords.isEmpty() ? null : List.copyOf(dislikedKeywords)
         );
     }
 

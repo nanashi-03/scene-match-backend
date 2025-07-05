@@ -64,7 +64,7 @@ public class JwtService {
 
     public Long extractId(String token) {
         try {
-            return (Long) getClaims(token).get("userId");
+            return Long.valueOf((Integer)(getClaims(token).get("userId")));
         } catch (JwtException | IllegalArgumentException e) {
             return null;
         }
