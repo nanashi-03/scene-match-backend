@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.silvered-soul</groupId>
 	<artifactId>scene-match</artifactId>
-	<version>0.5.1-SNAPSHOT</version>
+	<version>0.7.0-SNAPSHOT</version>
 	<name>scene-match</name>
 	<description>Movie recommendation app</description>
 	<url/>

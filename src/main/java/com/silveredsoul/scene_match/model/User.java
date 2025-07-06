@@ -64,7 +64,7 @@ public class User implements UserDetails {
     private Set<Long> watchedMovies = new HashSet<>();
 
     @Builder.Default
-    private String role = "ROLE_USER";
+    private String role = "User";
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
